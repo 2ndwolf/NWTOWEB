@@ -1,8 +1,6 @@
-
+import Globals from "./globals"
 
 export default class Assets {
-  private static imgTypes: Array<string> = ['png','jpg']
-  private static txtTypes: Array<string> = ['nw','txt']
   private static images: { [id: string] : HTMLImageElement} = {}
   private static texts: { [id: string] : string} = {}
 
@@ -12,6 +10,15 @@ export default class Assets {
   public static getText(id:string) : string {
     return Assets.texts[id]
   }
+
+  public static isTxtExt(ext:string){
+    return Globals.getTxtExts().indexOf(ext) > - 1
+  }
+
+  public static isImgExt(ext:string){
+    return Globals.getImgExts().indexOf(ext) > - 1
+  }
+
 
   public static async loadAssets(assetList: {[id: string]: string}) : Promise<void[]>{
     let assetPromises: Array<Promise<void>> = []
@@ -28,9 +35,9 @@ export default class Assets {
     let splt : Array<string> = file.split('/')
     let fileName : Array<string> = splt[splt.length-1].split('.')
     
-    if(Assets.imgTypes.indexOf(fileName[fileName.length-1]) > - 1) {
+    if(Assets.isImgExt(fileName[fileName.length-1])) {
       await Assets.loadImage(id,file)
-    } else if (Assets.txtTypes.indexOf(fileName[fileName.length-1]) > - 1) {
+    } else if (Assets.isTxtExt(fileName[fileName.length-1])) {
       await Assets.loadText(id,file)
     }
 
