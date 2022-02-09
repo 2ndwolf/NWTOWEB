@@ -1,0 +1,7 @@
+.vscode/
+build/
+lib/
+assets/
+node_modules/
+ntg.ts
+package-lock.json
