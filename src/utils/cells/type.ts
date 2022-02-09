@@ -1,4 +1,4 @@
-type cellTile = {
+export type cellTile = {
   x: number,
   y: number,
   frameX: number,
@@ -6,5 +6,10 @@ type cellTile = {
   id: number
 }
 
+export enum LevelTypes {
+  nw,
+  whatever,
+}
 
-export default cellTile
+
+// export default cellTile

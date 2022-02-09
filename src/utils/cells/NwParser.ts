@@ -6,7 +6,7 @@
  * 
  *  */ 
 
-import cellTile from "./type";
+import {cellTile} from "./type";
 
 export default class NwParser {
     public static parseCell (cellFile: string): Array<cellTile> {
@@ -16,10 +16,7 @@ export default class NwParser {
     }
   
     public static createTiles = (cellData: Array<Array<string>>) => {
-      let cellTiles = new Array< //object>();
-                        {x:number,y:number,
-                        frameX:number,frameY:number,
-                        id:number}>(); //should this be "any" or "Object"
+      let cellTiles = new Array<cellTile>(); //should this be "any" or "Object"
       
       // Cells are 64 x 64 tiles in size.
       /* old working ver
