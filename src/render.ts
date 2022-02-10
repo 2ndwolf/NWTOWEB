@@ -11,11 +11,16 @@ let gameHeight = () => {
 }
 
 export class Render {
-  public static gl: WebGLRenderingContext
+  private static gl: WebGLRenderingContext
+
+  public static getContext: () => WebGLRenderingContext = () => {return Render.gl}
+
   private static fallbackShader: boolean
   public static level: WebGLTexture
 
-  public static allRenderables : T.renderables
+  public static gameRenderables : T.renderables
+  private static uiRenderables : T.renderables
+
   private static positions = new Float32Array([
     -1, 1, 1, 1, 1,-1, // Triangle 1
     -1, 1, 1,-1, -1,-1 // Triangle 2
@@ -69,7 +74,7 @@ export class Render {
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, tileTex)
     Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0, Render.gl.RGBA, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE, img)
 
-    const framebuffer = Render.gl.createFramebuffer()
+    const framebuffer : WebGLFramebuffer = Render.gl.createFramebuffer()
     Render.gl.bindFramebuffer(Render.gl.FRAMEBUFFER, framebuffer)
     
     let cellTex : WebGLTexture = Render.createTexToBlitOn(tileSize*cellTileWH,tileSize*cellTileWH)
@@ -93,11 +98,19 @@ export class Render {
     Render.gl.bindBuffer(Render.gl.ARRAY_BUFFER, vbuffer);
     Render.gl.bufferData(Render.gl.ARRAY_BUFFER, Render.positions, Render.gl.STATIC_DRAW);
 
-    for(let layer in Render.allRenderables.all){
-      for(let rb in Render.allRenderables.all[layer]){
-        Render.renderBatch(Render.allRenderables.all[layer][rb])
+    
+    for(let layer in Object.fromEntries(Object.entries(Render.gameRenderables.all).sort((a,b)=> Number(a)-Number(b)))){
+      for(let rb in Render.gameRenderables.all[layer]){
+        Render.renderBatch(Render.gameRenderables.all[layer][rb])
       }
     }
+    
+    // for(let layer in Object.fromEntries(Object.entries(Render.uiRenderables.all).sort((a,b)=> Number(a)-Number(b)))){
+    //   for(let rb in Render.uiRenderables.all[layer]){
+    //     Render.renderBatch(Render.uiRenderables.all[layer][rb])
+    //   }
+    // }
+
     Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
 
   }
@@ -105,12 +118,13 @@ export class Render {
   private static renderBatch(batch : T.renderableBatch){
     Render.gl.useProgram(batch.shader.program)
     
-    for(let layer in batch.r){
+    for(let layer in Object.fromEntries(Object.entries(batch.r).sort((a,b)=> Number(a)-Number(b)))){
       for(let re in batch.r[layer]){
         Render.gl.bindTexture(Render.gl.TEXTURE_2D, Render.level)
-        
-        let sortedPasses = Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)));
-        for(let a in sortedPasses) batch.passes[Number(a)].fnct(batch)
+
+        for(let a in Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)))){
+          batch.passes[Number(a)].fnct(batch,Number(layer),batch.r[layer][re],gameWidth(),gameHeight())
+        }
       }
     }
   }
@@ -130,23 +144,11 @@ export class Render {
     return targetTexture;
   }
 
-  // private static setFramebuffer(fbo, width, height) {
-  //   // make this the framebuffer we are rendering to.
-  //   Render.gl.bindFramebuffer(Render.gl.FRAMEBUFFER, fbo);
-
-  //   // Tell the shader the resolution of the framebuffer.
-  //   Render.gl.uniform2f(resolutionLocation, width, height);
-
-  //   // Tell webgl the viewport setting needed for framebuffer.
-  //   Render.gl.viewport(0, 0, width, height);
-  // }
-
   private static GLSLinterpreter = class {
 
     // public
     static createShader(shaderID: string, vertexSource: string, fragmentSource: string): boolean{    
       try{
-        // console.log("FDAS")
         let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
         let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
         Render.shaders[shaderID] = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
@@ -184,6 +186,9 @@ export class Render {
   }
 
   public static Matrix = class {
+    // Taken from www.webglfundamentals.com or something
+    // TODO
+    
     static orthographic(left, right, bottom, top, near, far, dst = new Float32Array(16)) {
   
       dst[ 0] = 2 / (right - left);
@@ -207,8 +212,6 @@ export class Render {
     }
 
     static scale(m, sx, sy, sz, dst = new Float32Array(16)) {
-      // This is the optimized version of
-      // return multiply(m, scaling(sx, sy, sz), dst);
   
       dst[ 0] = sx * m[0 * 4 + 0];
       dst[ 1] = sx * m[0 * 4 + 1];
@@ -234,8 +237,6 @@ export class Render {
     }
   
     static translate(m, tx, ty, tz, dst = new Float32Array(16)) {
-      // This is the optimized version of
-      // return multiply(m, translation(tx, ty, tz), dst);
   
       var m00 = m[0];
       var m01 = m[1];
