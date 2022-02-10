@@ -16,6 +16,10 @@ export enum shaderPropTypes {
   uniform
 }
 
+export enum renderingTarget {
+  game, ui
+}
+
 export type shaderProp = {
   // varName: string,
   propType: shaderPropTypes,
@@ -31,13 +35,19 @@ export type renderableWProps = {
   id: string,
   x: number,
   y: number,
+  width: number,
+  height: number,
   scale: Float32Array,
   angle: number,
   texture: WebGLTexture
 }
 
 export type shaderPass = {
-  fnct : (self: renderableBatch) => void,
+  fnct : (self: renderableBatch, 
+          layer: number,
+          currentRenderable: renderableWProps,
+          targetWidth: number,
+          targetHeight: number) => void
 }
 
 export type renderableBatch = {
@@ -49,4 +59,6 @@ export type renderableBatch = {
 export type renderables = {
   all: {[layer:number]: Array<renderableBatch>}
 }
+
+export type Target = renderableWProps
 // export default cellTile
