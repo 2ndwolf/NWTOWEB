@@ -1,3 +1,12 @@
+export type Cell = {
+  fileName: string,
+  tileSize: number,
+  tileWidth: number,
+  tileHeight: number,
+  tiles: Array<cellTile>,
+  tileset: string
+}
+
 export type cellTile = {
   x: number,
   y: number,
@@ -14,6 +23,10 @@ export enum LevelTypes {
 export enum shaderPropTypes {
   attribute,
   uniform
+}
+
+export enum renderableTypes {
+  level, gameobject, uiobject
 }
 
 export enum renderingTarget {
@@ -53,7 +66,8 @@ export type shaderPass = {
 export type renderableBatch = {
   r: {[layer:number]: Array<renderableWProps>},
   shader: shaderProperties,
-  passes: {[num:number]: shaderPass}
+  passes: {[num:number]: shaderPass},
+  clampToBorder: boolean
 }
 
 export type renderables = {
