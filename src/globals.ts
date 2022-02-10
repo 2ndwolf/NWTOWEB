@@ -5,7 +5,7 @@ export default class Globals {
 
   private static origin : string = 'http://localhost:8003'
 
-  private static imgExts: Array<string> = ['png','jpg']
+  private static imgExts: Array<string> = ['png','jpg','gif']
   private static txtExts: Array<string> = ['nw','txt', 'vert', 'frag']
 
   public static getGameWidth() : number {
