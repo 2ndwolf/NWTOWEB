@@ -12,8 +12,8 @@ const init = async () => {
   let assetsToLoad: {[id:string]: string} = {};
   assetsToLoad['tileset'] = Globals.getOrigin()+'/assets/pics2.png'
   assetsToLoad['cellFile'] = Globals.getOrigin()+'/assets/nwfiles/contestfoyer.nw'
-  assetsToLoad['mainVert'] = Globals.getOrigin()+'/assets/shaders/main.vert'
-  assetsToLoad['mainFrag'] = Globals.getOrigin()+'/assets/shaders/main.frag'
+  assetsToLoad['mainVert'] = Globals.getOrigin()+'/shaders/main.vert'
+  assetsToLoad['mainFrag'] = Globals.getOrigin()+'/shaders/main.frag'
   await Assets.loadAssets(assetsToLoad)
 
   Render.init();
@@ -35,7 +35,9 @@ let fun : T.renderableWProps = {
   id: 'cellTex',
   x: 0,
   y: 0,
-  scale: new Float32Array([1.,1.]),
+  width: 1024,
+  height: 1024,
+  scale: new Float32Array([1,1]),
   angle : 0,
   texture: Render.level
 }
@@ -46,7 +48,7 @@ let dummy: {[layer:number]: Array<T.renderableWProps>} = {
 
 let times: T.renderableBatch = ShaderProgramsHelper.createClassicBatch(dummy, Render.getShader('fallbackShader'))
 
-Render.allRenderables = {
+Render.gameRenderables = {
   all:{0 : [times]}}
 
 init()
