@@ -17,9 +17,8 @@
         varying vec2 v_texcoord;
 
         void main() {
-        gl_Position = matrixLocation * vec4(aVertexPosition,0.,1.);
-        // matrixLocation * vec4(aVertexPosition, 0.0, 1.0);
-        v_texcoord = (textureMatrixLocation *  vec4(texcoordLocation, 0, 1)).xy;;
+            gl_Position = matrixLocation * vec4(aVertexPosition,0.,1.);
+            v_texcoord = (textureMatrixLocation *  vec4(texcoordLocation, 0, 1)).xy;;
         }
     </script>
     
@@ -31,7 +30,7 @@
         uniform sampler2D textureLocation;
         
         void main(void) {
-        gl_FragColor = texture2D(textureLocation, v_texcoord * (1.,-1.));
+            gl_FragColor = texture2D(textureLocation, v_texcoord * (1.,-1.));
         }
     </script>
     
