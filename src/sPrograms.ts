@@ -37,41 +37,41 @@ export default class ShaderProgramsHelper extends Render{
     },
     passes : {
       0:{
-        fnct: (self: T.renderableBatch) => {
-          let aVertexPosition = Render.gl.getAttribLocation(self.shader.program, "aVertexPosition");
-          Render.gl.enableVertexAttribArray(aVertexPosition);
-          Render.gl.vertexAttribPointer(aVertexPosition, 2, Render.gl.FLOAT, false, 0, 0);
+        fnct: (self: T.renderableBatch, layer: number, currentRenderable: T.renderableWProps, targetWidth: number, targetHeight: number) => {
+          let aVertexPosition = Render.getContext().getAttribLocation(self.shader.program, "aVertexPosition");
+          Render.getContext().enableVertexAttribArray(aVertexPosition);
+          Render.getContext().vertexAttribPointer(aVertexPosition, 2, Render.getContext().FLOAT, false, 0, 0);
         }
       },
       1:{
-        fnct: (self: T.renderableBatch) => {
-          let texCoordLocation = Render.gl.getAttribLocation(self.shader.program, "texcoordLocation");
-          Render.gl.enableVertexAttribArray(texCoordLocation);
-          Render.gl.vertexAttribPointer(texCoordLocation, 2, Render.gl.FLOAT, false, 0, 0);
+        fnct: (self: T.renderableBatch, layer: number, currentRenderable: T.renderableWProps, targetWidth: number, targetHeight: number) => {
+          let texCoordLocation = Render.getContext().getAttribLocation(self.shader.program, "texcoordLocation");
+          Render.getContext().enableVertexAttribArray(texCoordLocation);
+          Render.getContext().vertexAttribPointer(texCoordLocation, 2, Render.getContext().FLOAT, false, 0, 0);
         }
       },
       2:{
-        fnct: (self: T.renderableBatch) => {
-          let matrixLocation : WebGLUniformLocation = Render.gl.getUniformLocation(self.shader.program, "matrixLocation");
-          let matrix = Render.Matrix.orthographic(0, 1, 1, 0, 1, 0)
-          matrix = Render.Matrix.scale(matrix, 1, 1, 1);
-          matrix = Render.Matrix.translate(matrix,0,0,0)
-          Render.gl.uniformMatrix4fv(matrixLocation, false, matrix);
+        fnct: (self: T.renderableBatch, layer: number, currentRenderable: T.renderableWProps, targetWidth: number, targetHeight: number) => {
+          let matrixLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(self.shader.program, "matrixLocation");
+          let matrix = Render.Matrix.orthographic(0, (1/targetWidth)*currentRenderable.width, (1/targetHeight)*currentRenderable.height, 0, 1, 0)
+          matrix = Render.Matrix.translate(matrix, currentRenderable.x/targetWidth, currentRenderable.y/targetHeight,0)
+          matrix = Render.Matrix.scale(matrix, currentRenderable.scale[0], currentRenderable.scale[1], 1)
+          Render.getContext().uniformMatrix4fv(matrixLocation, false, matrix);
         }
       },
       3:{
-        fnct: (self: T.renderableBatch) => {
-          let textureMatrixLocation : WebGLUniformLocation = Render.gl.getUniformLocation(self.shader.program, "textureMatrixLocation");
+        fnct: (self: T.renderableBatch, layer: number, currentRenderable: T.renderableWProps, targetWidth: number, targetHeight: number) => {
+          let textureMatrixLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(self.shader.program, "textureMatrixLocation");
           let texMatrix = Render.Matrix.orthographic(0, 2, 2, 0, 1, 0)
-          texMatrix = Render.Matrix.scale(texMatrix, 1, 1, 1)
-          texMatrix = Render.Matrix.translate(texMatrix,0,1,0)
-          Render.gl.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
+          texMatrix = Render.Matrix.translate(texMatrix, 0, 1, 0)
+          // texMatrix = Render.Matrix.scale(texMatrix, currentRenderable.scale[0], currentRenderable.scale[1], 1)
+          Render.getContext().uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
         }
       },
       4:{
-        fnct: (self: T.renderableBatch) => {
-          let textureLocation : WebGLUniformLocation = Render.gl.getUniformLocation(self.shader.program, "textureLocation");
-          Render.gl.uniform1i(textureLocation, 0);
+        fnct: (self: T.renderableBatch, layer: number, currentRenderable: T.renderableWProps, targetWidth: number, targetHeight: number) => {
+          let textureLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(self.shader.program, "textureLocation");
+          Render.getContext().uniform1i(textureLocation, 0);
         }
       }
     }
