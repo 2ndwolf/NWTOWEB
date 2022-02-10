@@ -22,8 +22,8 @@ export class Render {
   private static uiRenderables : T.renderables
 
   private static positions = new Float32Array([
-    -1, 1, 1, 1, 1,-1, // Triangle 1
-    -1, 1, 1,-1, -1,-1 // Triangle 2
+    0, 1, 1, 1, 1, 0, // Triangle 1
+    0, 1, 1, 0, 0, 0  // Triangle 2
   ]);;
 
   public static init(): void{
@@ -36,16 +36,20 @@ export class Render {
           return cnvs
         })())
     
-      return document.querySelector("canvas").getContext("webgl")
+      let ctx : WebGLRenderingContext =  document.querySelector("canvas").
+      getContext("webgl",
+        {premultipliedAlpha: false}
+        )
+      ctx.enable(ctx.BLEND);
+      ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
+      return ctx
     })()
 
     Render.fallbackShader = ((): boolean =>{
       try {
         let vertexShaderSource = document.getElementById("tex-vertex-shader").textContent
         let fragmentShaderSource = document.getElementById("tex-fragment-shader").textContent
-        // console.log(fragmentShaderSource)
         return Render.GLSLinterpreter.createShader("fallbackShader", vertexShaderSource, fragmentShaderSource)
-        // console.log("FDSAF")
       } catch {
         console.debug("Could not create fallback shader. Info missing in html page.")
         return false
@@ -66,29 +70,54 @@ export class Render {
     return Render.GLSLinterpreter.createShader(id, vertex, fragment)
   }
 
-  // public static createRenderable
+  public static createTexture(assetID: string) : WebGLTexture { 
+    let img : HTMLImageElement = Assets.getImage(assetID)
+    let tex : WebGLTexture = Render.createTexToBlitOn(img.width,img.height)
 
-  public static createALevel(aCellTile: Array<T.cellTile>, tileSize: number, cellTileWH: number) : void{
-    let img : HTMLImageElement = Assets.getImage('tileset') as HTMLImageElement
-    let tileTex : WebGLTexture = Render.createTexToBlitOn(img.width,img.height)
-    Render.gl.bindTexture(Render.gl.TEXTURE_2D, tileTex)
+    Render.gl.bindTexture(Render.gl.TEXTURE_2D, tex)
     Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0, Render.gl.RGBA, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE, img)
+    return tex
+  }
+
+  public static createALevel(cell: T.Cell) : T.renderableWProps{
+    let tileTex : WebGLTexture = Render.createTexture(cell.tileset)
 
     const framebuffer : WebGLFramebuffer = Render.gl.createFramebuffer()
     Render.gl.bindFramebuffer(Render.gl.FRAMEBUFFER, framebuffer)
     
-    let cellTex : WebGLTexture = Render.createTexToBlitOn(tileSize*cellTileWH,tileSize*cellTileWH)
+    let cellTex : WebGLTexture = Render.createTexToBlitOn(cell.tileSize*cell.tileWidth,cell.tileSize*cell.tileHeight)
     Render.gl.framebufferTexture2D(Render.gl.FRAMEBUFFER, Render.gl.COLOR_ATTACHMENT0, Render.gl.TEXTURE_2D, tileTex, 0)
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, cellTex)
     
-    for(let i = 0; i < aCellTile.length; i++){
+    for(let i = 0; i < cell.tiles.length; i++){
       Render.gl.copyTexSubImage2D(Render.gl.TEXTURE_2D, 0,
-        (i%cellTileWH) * tileSize, Math.floor(i/cellTileWH) * tileSize, aCellTile[i]['frameX'], aCellTile[i]['frameY'],tileSize,tileSize)
+        (i%cell.tileWidth) * cell.tileSize,
+        Math.floor(i/cell.tileWidth) * cell.tileSize, 
+        cell.tiles[i]['frameX'],
+        cell.tiles[i]['frameY'],
+        cell.tileSize,cell.tileSize)
         // Math.round((i%cellTileWH) / tileSize), Math.round((i / cellTileWH) / tileSize), aCellTile[i]['frameX'], aCellTile[i]['frameY'],tileSize,tileSize)
       }
     Render.gl.deleteFramebuffer(framebuffer)
-    Render.level = cellTex;
+    return {
+      id: "level:"+cell.fileName+"\\"+(Render.createUUID()),
+      x: 29,
+      y: 0,
+      width: cell.tileSize*cell.tileWidth,
+      height: cell.tileSize*cell.tileHeight,
+      scale: new Float32Array([1.,1.]),
+      angle: 0,
+      texture: cellTex
+    }
   }
+
+  private static currentIndex = 0
+  public static createUUID(): string {
+    this.currentIndex+=1
+    return (this.currentIndex).toString()
+  }
+
+
 
   public static renderAll(){
     Render.gl.clearColor(0, 0.5, 0, 1);
@@ -111,29 +140,43 @@ export class Render {
     //   }
     // }
 
-    Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
 
   }
   
+  /**
+   *  This function contains a race condition timebomb
+   *  see Render.createTexture
+   */
   private static renderBatch(batch : T.renderableBatch){
     Render.gl.useProgram(batch.shader.program)
     
     for(let layer in Object.fromEntries(Object.entries(batch.r).sort((a,b)=> Number(a)-Number(b)))){
       for(let re in batch.r[layer]){
-        Render.gl.bindTexture(Render.gl.TEXTURE_2D, Render.level)
-
+        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[layer][re].texture)
+        
         for(let a in Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)))){
           batch.passes[Number(a)].fnct(batch,Number(layer),batch.r[layer][re],gameWidth(),gameHeight())
         }
+        Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
+
       }
     }
   }
 
 
+  /**
+   * Assumes clamptoborder = true
+   */
   private static createTexToBlitOn(width: number, height: number): WebGLTexture {
     const targetTexture = Render.gl.createTexture()
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, targetTexture);
+
+    // let empty = new Uint8Array((width+2)*(height+2)*4)
+    // console.log(empty)
+
     Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0,  Render.gl.RGBA, 
+                          // Clamp to border fix (+2)
+                          // width + 2, height + 2, 
                           width, height, 
                           0, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE,
                           null)
