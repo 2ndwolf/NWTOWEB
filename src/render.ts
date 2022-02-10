@@ -1,5 +1,4 @@
-import {cellTile} from "./utils/cells/type"
-import {LevelTypes} from "./utils/cells/type"
+import * as T from './utils/cells/type'
 import Assets from "./assets"
 
 import Globals from "./globals"
@@ -12,37 +11,59 @@ let gameHeight = () => {
 }
 
 export class Render {
-  public static gl: WebGLRenderingContext = ((): WebGLRenderingContext => {
-    document.querySelector("body").appendChild(
-      ((): Node => {
-        let cnvs = document.createElement("canvas")
-        cnvs.setAttribute("width", gameWidth().toString())
-        cnvs.setAttribute("height", gameHeight().toString())
-        return cnvs
-      })())
-  
-    return document.querySelector("canvas").getContext("webgl")
-  })()
+  public static gl: WebGLRenderingContext
+  private static fallbackShader: boolean
+  public static level: WebGLTexture
+
+  public static allRenderables : T.renderables
+  private static positions = new Float32Array([
+    -1, 1, 1, 1, 1,-1, // Triangle 1
+    -1, 1, 1,-1, -1,-1 // Triangle 2
+  ]);;
+
+  public static init(): void{
+    Render.gl = ((): WebGLRenderingContext => {
+      document.querySelector("body").appendChild(
+        ((): Node => {
+          let cnvs = document.createElement("canvas")
+          cnvs.setAttribute("width", gameWidth().toString())
+          cnvs.setAttribute("height", gameHeight().toString())
+          return cnvs
+        })())
+    
+      return document.querySelector("canvas").getContext("webgl")
+    })()
+
+    Render.fallbackShader = ((): boolean =>{
+      try {
+        let vertexShaderSource = document.getElementById("tex-vertex-shader").textContent
+        let fragmentShaderSource = document.getElementById("tex-fragment-shader").textContent
+        // console.log(fragmentShaderSource)
+        return Render.GLSLinterpreter.createShader("fallbackShader", vertexShaderSource, fragmentShaderSource)
+        // console.log("FDSAF")
+      } catch {
+        console.debug("Could not create fallback shader. Info missing in html page.")
+        return false
+      }
+    })()
+  }
 
   private static shaders: { [id: string] : WebGLProgram} = {}
 
-  public static main(): void {
-    let vertexShaderSource = document.getElementById("tex-vertex-shader").textContent
-    let fragmentShaderSource = document.getElementById("tex-fragment-shader").textContent
-
-    Render.GLSLinterpreter.createShader("mainShader", vertexShaderSource, fragmentShaderSource)
+  public static getShader (id: string) : WebGLProgram{
+    if(Object.keys(Render.shaders).indexOf(id) < 0){
+      if(Render.fallbackShader) return Render.shaders['fallbackShader']
+      else console.debug("Couldn't use fallback shader")
+    } else return Render.shaders[id]
   }
 
-  public static renderALevel(aCellTile: Array<cellTile>, tileSize: number, cellTileWH: number): void {
-    let textureLocation : WebGLUniformLocation = Render.gl.getUniformLocation(Render.shaders['mainShader'], "textureLocation");
-    let textureMatrixLocation : WebGLUniformLocation = Render.gl.getUniformLocation(Render.shaders['mainShader'], "textureMatrixLocation");
-    let matrixLocation : WebGLUniformLocation = Render.gl.getUniformLocation(Render.shaders['mainShader'], "matrixLocation");
-    let texCoordLocation = Render.gl.getAttribLocation(Render.shaders['mainShader'], "texcoordLocation");
+  public static createShader(id:string, vertex: string, fragment: string): boolean {
+    return Render.GLSLinterpreter.createShader(id, vertex, fragment)
+  }
 
+  // public static createRenderable
 
-    Render.gl.clearColor(0, 0.5, 0, 1);
-    Render.gl.clear(Render.gl.COLOR_BUFFER_BIT);
-
+  public static createALevel(aCellTile: Array<T.cellTile>, tileSize: number, cellTileWH: number) : void{
     let img : HTMLImageElement = Assets.getImage('tileset') as HTMLImageElement
     let tileTex : WebGLTexture = Render.createTexToBlitOn(img.width,img.height)
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, tileTex)
@@ -61,47 +82,38 @@ export class Render {
         // Math.round((i%cellTileWH) / tileSize), Math.round((i / cellTileWH) / tileSize), aCellTile[i]['frameX'], aCellTile[i]['frameY'],tileSize,tileSize)
       }
     Render.gl.deleteFramebuffer(framebuffer)
-    Render.gl.bindTexture(Render.gl.TEXTURE_2D, cellTex)
+    Render.level = cellTex;
+  }
 
-    var aspect = Render.gl.canvas.width / Render.gl.canvas.height;
-
-    let positions = new Float32Array([
-      -1, 1, 1, 1, 1,-1, // Triangle 1
-      -1, 1, 1,-1, -1,-1 // Triangle 2
-    ]);;
+  public static renderAll(){
+    Render.gl.clearColor(0, 0.5, 0, 1);
+    Render.gl.clear(Render.gl.COLOR_BUFFER_BIT);
 
     let vbuffer = Render.gl.createBuffer();
     Render.gl.bindBuffer(Render.gl.ARRAY_BUFFER, vbuffer);
-    Render.gl.bufferData(Render.gl.ARRAY_BUFFER, positions, Render.gl.STATIC_DRAW);
+    Render.gl.bufferData(Render.gl.ARRAY_BUFFER, Render.positions, Render.gl.STATIC_DRAW);
 
-    let itemSize = 2;
-    let numItems = positions.length / itemSize;
+    for(let layer in Render.allRenderables.all){
+      for(let rb in Render.allRenderables.all[layer]){
+        Render.renderBatch(Render.allRenderables.all[layer][rb])
+      }
+    }
+    Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
 
-    Render.gl.useProgram(Render.shaders['mainShader']);
-    
-    let aVertexPosition = Render.gl.getAttribLocation(Render.shaders['mainShader'], "aVertexPosition");
-    Render.gl.enableVertexAttribArray(aVertexPosition);
-    Render.gl.vertexAttribPointer(aVertexPosition, itemSize, Render.gl.FLOAT, false, 0, 0);
-
-    Render.gl.enableVertexAttribArray(texCoordLocation);
-    Render.gl.vertexAttribPointer(texCoordLocation, itemSize, Render.gl.FLOAT, false, 0, 0);
-
-    let matrix = Render.Matrix.orthographic(0, 1, 1, 0, 1, 0)
-    matrix = Render.Matrix.scale(matrix, 1, 1, 1);
-    matrix = Render.Matrix.translate(matrix,0,0,0)
-    Render.gl.uniformMatrix4fv(matrixLocation, false, matrix);
-    
-    let texMatrix = Render.Matrix.orthographic(0, 2, 2, 0, 1, 0)
-    texMatrix = Render.Matrix.scale(texMatrix, 1, 1, 1)
-    texMatrix = Render.Matrix.translate(texMatrix,0,1,0)
-    Render.gl.uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-
-    Render.gl.uniform1i(textureLocation, 0);
-
-    Render.gl.drawArrays(Render.gl.TRIANGLES, 0, numItems);
   }
-
-
+  
+  private static renderBatch(batch : T.renderableBatch){
+    Render.gl.useProgram(batch.shader.program)
+    
+    for(let layer in batch.r){
+      for(let re in batch.r[layer]){
+        Render.gl.bindTexture(Render.gl.TEXTURE_2D, Render.level)
+        
+        let sortedPasses = Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)));
+        for(let a in sortedPasses) batch.passes[Number(a)].fnct(batch)
+      }
+    }
+  }
 
 
   private static createTexToBlitOn(width: number, height: number): WebGLTexture {
@@ -132,10 +144,16 @@ export class Render {
   private static GLSLinterpreter = class {
 
     // public
-    static createShader(shaderID: string, vertexSource: string, fragmentSource: string): void{    
-      let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
-      let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
-      Render.shaders[shaderID] = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
+    static createShader(shaderID: string, vertexSource: string, fragmentSource: string): boolean{    
+      try{
+        // console.log("FDAS")
+        let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
+        let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
+        Render.shaders[shaderID] = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
+        return true
+      } catch {
+        return false;
+      }
     }
 
     // private
@@ -165,7 +183,7 @@ export class Render {
 
   }
 
-  private static Matrix = class {
+  public static Matrix = class {
     static orthographic(left, right, bottom, top, near, far, dst = new Float32Array(16)) {
   
       dst[ 0] = 2 / (right - left);
