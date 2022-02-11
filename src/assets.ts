@@ -64,6 +64,17 @@ export default class Assets {
     Assets.texts[id] = data;
   }
 
+  public static async save(){
+    let data = new Blob([Assets.getText('cellFile')])
+    // TODO get the current state of the file in editor and make a nw compatible file with it
+    let linkD = await this.blobToBase64(data)
+    let a = document.createElement("a")
+
+    a.href = linkD.toString()
+    a.click()
+      
+  }
+
   private static async blobToBase64(blob) {
     return new Promise((resolve, _) => {
       const reader = new FileReader();
