@@ -22,8 +22,12 @@ export class Render {
   private static uiRenderables : T.renderables
 
   private static positions = new Float32Array([
-    0, 1, 1, 1, 1, 0, // Triangle 1
-    0, 1, 1, 0, 0, 0  // Triangle 2
+    // 1, 0, 0, 0, 0, 1, // Triangle 1
+    // 1, 0, 0, 1, 1, 1  // Triangle 2
+    1, 0, 0, 0, 0, 1, // Triangle 1
+    1, 0, 0, 1, 1, 1  // Triangle 2
+    // 1, -1, -1, -1, -1, 1, // Triangle 1
+    // 1, -1, -1, 1, 1, 1  // Triangle 2
   ]);;
 
   public static init(): void{
@@ -70,23 +74,27 @@ export class Render {
     return Render.GLSLinterpreter.createShader(id, vertex, fragment)
   }
 
-  public static createTexture(assetID: string) : WebGLTexture { 
-    let img : HTMLImageElement = Assets.getImage(assetID)
+  public static createTexture(img: HTMLImageElement) : T.Tex { 
+    // let img : HTMLImageElement = Assets.getImage(assetID).data as HTMLImageElement
     let tex : WebGLTexture = Render.createTexToBlitOn(img.width,img.height)
 
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, tex)
     Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0, Render.gl.RGBA, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE, img)
-    return tex
+    return {
+      image: tex,
+      width: img.width,
+      height: img.height
+    }
   }
 
-  public static createALevel(cell: T.Cell) : T.renderableWProps{
-    let tileTex : WebGLTexture = Render.createTexture(cell.tileset)
+  public static createALevel(id : string, cell: T.Cell) : T.npc{
+    let tileTex : T.Tex = Render.createTexture(Assets.getImage(cell.tileset))
 
     const framebuffer : WebGLFramebuffer = Render.gl.createFramebuffer()
     Render.gl.bindFramebuffer(Render.gl.FRAMEBUFFER, framebuffer)
     
     let cellTex : WebGLTexture = Render.createTexToBlitOn(cell.tileSize*cell.tileWidth,cell.tileSize*cell.tileHeight)
-    Render.gl.framebufferTexture2D(Render.gl.FRAMEBUFFER, Render.gl.COLOR_ATTACHMENT0, Render.gl.TEXTURE_2D, tileTex, 0)
+    Render.gl.framebufferTexture2D(Render.gl.FRAMEBUFFER, Render.gl.COLOR_ATTACHMENT0, Render.gl.TEXTURE_2D, tileTex.image, 0)
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, cellTex)
     
     for(let i = 0; i < cell.tiles.length; i++){
@@ -100,14 +108,17 @@ export class Render {
       }
     Render.gl.deleteFramebuffer(framebuffer)
     return {
-      id: "level:"+cell.fileName+"\\"+(Render.createUUID()),
-      x: 29,
+      id: "levelprt:"+id+"\\"+(Render.createUUID()),
+      file: "",
+      x: 0,
       y: 0,
-      width: cell.tileSize*cell.tileWidth,
-      height: cell.tileSize*cell.tileHeight,
       scale: new Float32Array([1.,1.]),
       angle: 0,
-      texture: cellTex
+      texture: {
+        image: cellTex,
+        width: cell.tileSize * cell.tileWidth,
+        height: cell.tileSize * cell.tileWidth
+      }
     }
   }
 
@@ -152,7 +163,7 @@ export class Render {
     
     for(let layer in Object.fromEntries(Object.entries(batch.r).sort((a,b)=> Number(a)-Number(b)))){
       for(let re in batch.r[layer]){
-        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[layer][re].texture)
+        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[layer][re].texture.image)
         
         for(let a in Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)))){
           batch.passes[Number(a)].fnct(batch,Number(layer),batch.r[layer][re],gameWidth(),gameHeight())
@@ -174,10 +185,10 @@ export class Render {
     // let empty = new Uint8Array((width+2)*(height+2)*4)
     // console.log(empty)
 
-    Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0,  Render.gl.RGBA, 
+    Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0, Render.gl.RGBA, 
                           // Clamp to border fix (+2)
                           // width + 2, height + 2, 
-                          width, height, 
+                          width, height,
                           0, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE,
                           null)
 

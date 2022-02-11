@@ -1,10 +1,11 @@
 export type Cell = {
-  fileName: string,
+  id: string,
   tileSize: number,
   tileWidth: number,
   tileHeight: number,
   tiles: Array<cellTile>,
   tileset: string
+  npcs: Array<npc>
 }
 
 export type cellTile = {
@@ -44,27 +45,33 @@ export type shaderProperties = {
   program: WebGLProgram
 }
 
-export type renderableWProps = {
+// export type renderableWProps = {
+export type npc = {
   id: string,
+  file?: string,
   x: number,
   y: number,
-  width: number,
-  height: number,
   scale: Float32Array,
   angle: number,
-  texture: WebGLTexture
+  texture?: Tex
+}
+
+export type Tex = {
+  image: WebGLTexture,
+  width: number,
+  height: number
 }
 
 export type shaderPass = {
   fnct : (self: renderableBatch, 
           layer: number,
-          currentRenderable: renderableWProps,
+          currentRenderable: npc,
           targetWidth: number,
           targetHeight: number) => void
 }
 
 export type renderableBatch = {
-  r: {[layer:number]: Array<renderableWProps>},
+  r: {[layer:number]: Array<npc>},
   shader: shaderProperties,
   passes: {[num:number]: shaderPass},
   clampToBorder: boolean
@@ -74,5 +81,4 @@ export type renderables = {
   all: {[layer:number]: Array<renderableBatch>}
 }
 
-export type Target = renderableWProps
 // export default cellTile
