@@ -6,17 +6,51 @@
  * 
  *  */ 
 
-import {cellTile} from "./type";
+import * as T from "./type";
 
 export default class NwParser {
-    public static parseCell (cellFile: string): Array<cellTile> {
-      const cellData = NwParser.createCellData(cellFile);
-      const cellTiles = NwParser.createTiles(cellData);
-      return cellTiles;
+    public static parseCell (id : string, cellFile: string): T.Cell {
+      const cellData = NwParser.createCellData(cellFile)
+      const cellTiles = NwParser.createTiles(cellData)
+      const npcs = NwParser.extractNPCS(cellFile)
+      return {
+        // TODO append uuid
+        id: 'cell:'+id+"\\",
+        tileSize: 16,
+        tileWidth: 64,
+        tileHeight: 64,
+        tiles: cellTiles,
+        tileset: 'tileset',
+        npcs: npcs
+      };
+    }
+
+    private static extractNPCS(cellFile: string): Array<T.npc> {
+      let npcs = []
+      const cellLines : Array<string> = cellFile.split('\n')
+      for(let x in cellLines){
+        if(cellLines[x].startsWith("NPC ")){
+          const npcProps : Array<string> = cellLines[x].split(' ')
+          const npc : T.npc = {
+            // TODO append uuid
+            id: 'npc:'+npcProps[1]+"\\",
+            file: npcProps[1],
+            x: Number(npcProps[2])*16,
+            y: Number(npcProps[3])*16,
+            scale: new Float32Array([1.,1.]),
+            angle: 0,
+            texture : undefined
+          }
+          npcs.push(npc)
+          console.log(npc.file)
+        }
+      }
+
+      return npcs
     }
   
     public static createTiles = (cellData: Array<Array<string>>) => {
-      let cellTiles = new Array<cellTile>(); //should this be "any" or "Object"
+      let cellTiles = new Array<T.cellTile>();
       
       // Cells are 64 x 64 tiles in size.
       /* old working ver
