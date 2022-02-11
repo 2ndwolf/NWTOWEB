@@ -14,46 +14,53 @@ const init = async () => {
   assetsToLoad['cellFile'] = Globals.getOrigin()+'/assets/nwfiles/contestfoyer.nw'
   assetsToLoad['chest'] = Globals.getOrigin()+'/assets/gen_specialchest.gif'
   assetsToLoad['bigH'] = Globals.getOrigin()+'/assets/admintable.png'
+  assetsToLoad['emptyNPC'] = Globals.getOrigin()+'/assets/emptyNPC.png'
   assetsToLoad['mainVert'] = Globals.getOrigin()+'/shaders/main.vert'
   assetsToLoad['mainFrag'] = Globals.getOrigin()+'/shaders/main.frag'
   await Assets.loadAssets(assetsToLoad)
 
   Render.init();
-  const cellTiles : Array<T.cellTile> = NeW.default.parseCell(Assets.getText('cellFile'))
-  const cell : T.Cell = {
-    fileName: 'contestfoyer.nw',
-    tileSize: 16,
-    tileWidth: 64,
-    tileHeight: 64,
-    tiles: cellTiles,
-    tileset: 'tileset'
-  }
-  let cellR : T.renderableWProps = Render.createALevel(cell)
+  console.log(Assets.getText('cellFile'))
+  const cell : T.Cell = NeW.default.parseCell('anotherFUNid', Assets.getText('cellFile'))
 
-  let chest : T.renderableWProps = {
+  for(let n in cell.npcs){
+    let assets : {[id:string]: string} = {}
+    assets[cell.npcs[n].file] = Globals.getOrigin()+"/assets/"+cell.npcs[n].file
+
+    if(cell.npcs[n].file != "-"){
+      await Assets.loadAssets(assets)
+      cell.npcs[n].texture = Render.createTexture(Assets.getImage(cell.npcs[n].file))
+      
+    } else {
+      cell.npcs[n].texture = Render.createTexture(Assets.getImage('emptyNPC'))
+      
+    }
+  }
+
+  let cellR : T.npc = Render.createALevel('funID', cell)
+
+  let chest : T.npc = {
     id: "chestIMG",
+    file: '/assets/gen_specialchest.gif',
     x: 0,
     y: 0,
-    width: 32,
-    height: 32,
     angle: 0,
     scale: new Float32Array([1.,1.]),
-    texture: Render.createTexture('chest')
+    texture: Render.createTexture(Assets.getImage('chest') as HTMLImageElement)
   }
-  let bigH : T.renderableWProps = {
+  let bigH : T.npc = {
     id: "bigH",
+    file: '/assets/admintable.png',
     x: 512,
     y: 512,
-    width: 96,
-    height: 176,
     angle: 0,
     scale: new Float32Array([1.,1.]),
-    texture: Render.createTexture('bigH')
+    texture: Render.createTexture(Assets.getImage('bigH') as HTMLImageElement)
   }
 
-  let dummy: {[layer:number]: Array<T.renderableWProps>} = {
+  let dummy: {[layer:number]: Array<T.npc>} = {
     0: [cellR],
-    1: [chest, bigH]
+    1: cell.npcs
   }
   
   let times: T.renderableBatch = ShaderProgramsHelper.createClassicBatch(dummy, Render.getShader('fallbackShader'))
@@ -64,6 +71,8 @@ const init = async () => {
 
   Render.renderAll()
 
+  // Assets.save()
+
   // Render.createShader('mainShader', Assets.getText('mainVert'), Assets.getText('mainFrag'))
 
 
@@ -72,18 +81,6 @@ const init = async () => {
 
 }
 Render.init()
-
-let fun : T.renderableWProps = {
-  id: 'cellTex',
-  x: 512,
-  y: 0,
-  width: 1024,
-  height: 1024,
-  scale: new Float32Array([1,.5]),
-  angle : 0,
-  texture: Render.level
-}
-
 
 init()
 
