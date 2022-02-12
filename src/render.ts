@@ -1,5 +1,6 @@
 import * as T from './utils/cells/type'
 import Assets from "./assets"
+import DefaultShaders from "./sPrograms"
 
 import Globals from "./globals"
 
@@ -12,15 +13,15 @@ let gameHeight = () => {
 
 export class Render {
   private static gl: WebGLRenderingContext
-
+  
   public static getContext: () => WebGLRenderingContext = () => {return Render.gl}
-
-  private static fallbackShader: boolean
+  
+  public static shaderForFallback: string = 'fallbackShader'
   public static level: WebGLTexture
-
-  public static gameRenderables : T.renderables
+  
+  public static gameRenderables : T.renderables = {all:{}}
   private static uiRenderables : T.renderables
-
+  
   private static positions = new Float32Array([
     // 1, 0, 0, 0, 0, 1, // Triangle 1
     // 1, 0, 0, 1, 1, 1  // Triangle 2
@@ -49,30 +50,54 @@ export class Render {
       return ctx
     })()
 
-    Render.fallbackShader = ((): boolean =>{
-      try {
-        let vertexShaderSource = document.getElementById("tex-vertex-shader").textContent
-        let fragmentShaderSource = document.getElementById("tex-fragment-shader").textContent
-        return Render.GLSLinterpreter.createShader("fallbackShader", vertexShaderSource, fragmentShaderSource)
-      } catch {
-        console.debug("Could not create fallback shader. Info missing in html page.")
-        return false
+    try{
+      DefaultShaders?.initShaders()
+    } catch {
+      console.log("Could not initialize all default shaders...")
+    }
+
+    Render.vbuffer = Render.gl.createBuffer();
+    Render.gl.bindBuffer(Render.gl.ARRAY_BUFFER, Render.vbuffer);
+    Render.gl.bufferData(Render.gl.ARRAY_BUFFER, Render.positions, Render.gl.STATIC_DRAW);
+    Render.gl.clearColor(0, 0.5, 0, 1);
+
+  }
+
+  public static mergeToRenderable = (renderable:T.renderables, type:T.renderableTypes)=>{
+    console.log(renderable)
+    switch(type){
+      case T.renderableTypes.gameobject:{
+        Render.mergeRenderables(renderable, Render.gameRenderables)
+        break
       }
-    })()
+    }
   }
 
-  private static shaders: { [id: string] : WebGLProgram} = {}
-
-  public static getShader (id: string) : WebGLProgram{
-    if(Object.keys(Render.shaders).indexOf(id) < 0){
-      if(Render.fallbackShader) return Render.shaders['fallbackShader']
-      else console.debug("Couldn't use fallback shader")
-    } else return Render.shaders[id]
+  public static mergeRenderables = (renderableInput: T.renderables, sourceRenderable: T.renderables)=>{
+    for(let a in renderableInput.all){
+      // console.log(renderableInput)
+      let index = 0
+      while(sourceRenderable.all.hasOwnProperty(a+index)){
+        index += Number.MIN_VALUE
+      }
+      sourceRenderable.all[a+index] = renderableInput.all[a]
+    }
   }
 
-  public static createShader(id:string, vertex: string, fragment: string): boolean {
-    return Render.GLSLinterpreter.createShader(id, vertex, fragment)
+
+  private static shaders: {[name:string]:T.Shader} = {}
+
+  public static getShader (id: string = '') : T.Shader{
+    let shader : T.Shader = Render.shaders[id] || Render.shaders[Render.shaderForFallback] || undefined
+    if(shader===undefined){
+      console.log("Shader "+id+" doesn't exist and couldn't find fallback shader "+Render.shaderForFallback)
+    }
+    return shader
   }
+
+  // public static createShader(id:string, vertex: string, fragment: string): boolean {
+  //   return Render.GLSLinterpreter.createShader(id, vertex, fragment)
+  // }
 
   public static createTexture(img: HTMLImageElement) : T.Tex { 
     // let img : HTMLImageElement = Assets.getImage(assetID).data as HTMLImageElement
@@ -87,7 +112,7 @@ export class Render {
     }
   }
 
-  public static createALevel(id : string, cell: T.Cell) : T.npc{
+  public static createALevel(id : string, cell: T.Cell) : T.gameobject{
     let tileTex : T.Tex = Render.createTexture(Assets.getImage(cell.tileset))
 
     const framebuffer : WebGLFramebuffer = Render.gl.createFramebuffer()
@@ -104,11 +129,10 @@ export class Render {
         cell.tiles[i]['frameX'],
         cell.tiles[i]['frameY'],
         cell.tileSize,cell.tileSize)
-        // Math.round((i%cellTileWH) / tileSize), Math.round((i / cellTileWH) / tileSize), aCellTile[i]['frameX'], aCellTile[i]['frameY'],tileSize,tileSize)
       }
     Render.gl.deleteFramebuffer(framebuffer)
     return {
-      id: "levelprt:"+id+"\\"+(Render.createUUID()),
+      // id: "levelprt::"+id+"\\"+(Render.createUUID()),
       file: "",
       x: 0,
       y: 0,
@@ -122,26 +146,25 @@ export class Render {
     }
   }
 
-  private static currentIndex = 0
-  public static createUUID(): string {
-    this.currentIndex+=1
-    return (this.currentIndex).toString()
-  }
-
-
+  private static lastShader : string = ''
+  private static shader: T.Shader 
+  private static vbuffer: WebGLBuffer
 
   public static renderAll(){
-    Render.gl.clearColor(0, 0.5, 0, 1);
     Render.gl.clear(Render.gl.COLOR_BUFFER_BIT);
 
-    let vbuffer = Render.gl.createBuffer();
-    Render.gl.bindBuffer(Render.gl.ARRAY_BUFFER, vbuffer);
-    Render.gl.bufferData(Render.gl.ARRAY_BUFFER, Render.positions, Render.gl.STATIC_DRAW);
+    const sorted = Object.keys(Render.gameRenderables.all).sort((a,b)=>Number(a)-Number(b))
 
-    
-    for(let layer in Object.fromEntries(Object.entries(Render.gameRenderables.all).sort((a,b)=> Number(a)-Number(b)))){
-      for(let rb in Render.gameRenderables.all[layer]){
-        Render.renderBatch(Render.gameRenderables.all[layer][rb])
+    for(let layer in sorted){
+      for(let rb in Render.gameRenderables.all[sorted[layer]].members){
+        const currentShader = Render.gameRenderables.all[sorted[layer]].members[rb]
+        if(Render.lastShader===currentShader) {}
+        else Render.shader = Render.shaders[currentShader] || Render.shaders[Render.shaderForFallback] || undefined
+        if(Render.shader != undefined){
+          Render.gl.useProgram(Render.shader.program)
+          Render.renderBatch(Render.gameRenderables.all[sorted[layer]].members[rb], Render.shader)
+        }
+        Render.lastShader = currentShader
       }
     }
     
@@ -151,22 +174,19 @@ export class Render {
     //   }
     // }
 
-
+    requestAnimationFrame(Render.renderAll)
   }
   
-  /**
-   *  This function contains a race condition timebomb
-   *  see Render.createTexture
-   */
-  private static renderBatch(batch : T.renderableBatch){
-    Render.gl.useProgram(batch.shader.program)
-    
-    for(let layer in Object.fromEntries(Object.entries(batch.r).sort((a,b)=> Number(a)-Number(b)))){
-      for(let re in batch.r[layer]){
-        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[layer][re].texture.image)
+  private static renderBatch(batch : T.renderableBatch, shader: T.Shader){
+
+    const sorted1 = Object.keys(batch.r).sort((a,b)=>Number(a)-Number(b))
+    for(let layer in sorted1){
+      for(let re in batch.r[sorted1[layer]]){
+        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[sorted1[layer]][re].texture.image)
         
-        for(let a in Object.fromEntries(Object.entries(batch.passes).sort((a,b)=> Number(a)-Number(b)))){
-          batch.passes[Number(a)].fnct(batch,Number(layer),batch.r[layer][re],gameWidth(),gameHeight())
+        const sortedPasses = Object.keys(shader.passes).sort((a,b)=>Number(a)-Number(b))
+        for(let a in sortedPasses){
+          shader.passes[sortedPasses[a]](batch,batch.r[sorted1[layer]],batch.r[sorted1[layer]][re],gameWidth(),gameHeight(),shader)          
         }
         Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
 
@@ -175,19 +195,11 @@ export class Render {
   }
 
 
-  /**
-   * Assumes clamptoborder = true
-   */
   private static createTexToBlitOn(width: number, height: number): WebGLTexture {
     const targetTexture = Render.gl.createTexture()
     Render.gl.bindTexture(Render.gl.TEXTURE_2D, targetTexture);
 
-    // let empty = new Uint8Array((width+2)*(height+2)*4)
-    // console.log(empty)
-
     Render.gl.texImage2D(Render.gl.TEXTURE_2D, 0, Render.gl.RGBA, 
-                          // Clamp to border fix (+2)
-                          // width + 2, height + 2, 
                           width, height,
                           0, Render.gl.RGBA, Render.gl.UNSIGNED_BYTE,
                           null)
@@ -198,19 +210,27 @@ export class Render {
     return targetTexture;
   }
 
-  private static GLSLinterpreter = class {
-
-    // public
-    static createShader(shaderID: string, vertexSource: string, fragmentSource: string): boolean{    
-      try{
-        let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
-        let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
-        Render.shaders[shaderID] = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
-        return true
-      } catch {
-        return false;
+  public static createShader(vertexSource: string, fragmentSource: string, 
+                      properties: {[propName: string]: T.shaderProp}, passes: {[num:number]: T.shaderPass}): T.Shader{  
+    try{
+      let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
+      let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
+      let program = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
+      return {
+        properties: properties,
+        program : program,
+        passes: passes
       }
+    } catch {
+      console.log("Shader creation unsuccessful")
     }
+  }
+
+  public static addShader(id: string, shader: T.Shader){
+    Render.shaders[id] = shader
+  }
+
+  private static GLSLinterpreter = class {
 
     // private
     static compileShader(type, source): WebGLShader {
