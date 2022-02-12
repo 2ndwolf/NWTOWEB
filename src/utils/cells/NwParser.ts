@@ -7,6 +7,7 @@
  *  */ 
 
 import * as T from "./type";
+import {Identification} from "../../identification";
 
 export default class NwParser {
     public static parseCell (id : string, cellFile: string): T.Cell {
@@ -14,8 +15,8 @@ export default class NwParser {
       const cellTiles = NwParser.createTiles(cellData)
       const npcs = NwParser.extractNPCS(cellFile)
       return {
-        // TODO append uuid
-        id: 'cell:'+id+"\\",
+        // TODO append uid
+        id: 'cell::0::levels::'+id+"::"/*+uniqueid*/,
         tileSize: 16,
         tileWidth: 64,
         tileHeight: 64,
@@ -25,15 +26,16 @@ export default class NwParser {
       };
     }
 
-    private static extractNPCS(cellFile: string): Array<T.npc> {
-      let npcs = []
+    private static extractNPCS(cellFile: string): {[name:string]:T.gameobject} {
+      let npcs : {[name:string]:T.gameobject} = {}
       const cellLines : Array<string> = cellFile.split('\n')
       for(let x in cellLines){
         if(cellLines[x].startsWith("NPC ")){
           const npcProps : Array<string> = cellLines[x].split(' ')
-          const npc : T.npc = {
-            // TODO append uuid
-            id: 'npc:'+npcProps[1]+"\\",
+          const newID : string = Identification.newID()
+          const npc : T.gameobject = {
+            // TODO append uid
+            id: 'npc::1::nwnpcs::0::'+npcProps[1]+"::"+newID,
             file: npcProps[1],
             x: Number(npcProps[2])*16,
             y: Number(npcProps[3])*16,
@@ -41,35 +43,15 @@ export default class NwParser {
             angle: 0,
             texture : undefined
           }
-          npcs.push(npc)
-          console.log(npc.file)
+          npcs[newID] = npc
         }
       }
-
       return npcs
     }
   
     public static createTiles = (cellData: Array<Array<string>>) => {
       let cellTiles = new Array<T.cellTile>();
       
-      // Cells are 64 x 64 tiles in size.
-      /* old working ver
-      for (var y=1; y<=64; y++) {
-        for (var x=0; x<64; x++) {
-            // let tile = []
-            const tileStr = cellData[y][5].charAt(x*2) + cellData[y][5].charAt(2*x+1);
-            const tile = tileSwitch[tileStr];
-            // console.log(tile)
-            cellTiles.push({
-              x: x,
-              y: Number(cellData[y][2]),
-              frameX: tile[0], 
-              frameY: tile[1],
-              id: tile[2]
-            });
-        }
-      } */
-      // NEW VER
       let headerOffset : number = 1;
       for (var y=0; y<64; y++) {
         for (var x=0; x<64; x++) {
