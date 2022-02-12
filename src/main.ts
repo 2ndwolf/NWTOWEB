@@ -1,11 +1,31 @@
 import Render from "./render"
 import Assets from "./assets"
+import Mouse from "./mouse"
 import * as NeW from "./utils/cells/NwParser"
 import * as T from './utils/cells/type'
-import ShaderProgramsHelper from './sPrograms'
+import DefaultShaders from './defaultShaders'
 
 
 import Globals from "./globals"
+
+const getByID = (id:string) : T.gameobject => {
+  let spl = id.split(':')
+  if(spl[0]=="npc"){
+    for(let layer in Render.gameRenderables.all){
+      for(let batch in Render.gameRenderables.all[layer]){
+        for(let bLayer in Render.gameRenderables.all[layer][batch]){
+          for(let npc in Render.gameRenderables.all[layer][batch][bLayer]){
+            if(Render.gameRenderables.all[layer][batch][bLayer][npc].id.split("\\")[0] == id){
+              return Render.gameRenderables.all[layer][batch][bLayer][npc]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 
 const init = async () => {
   
@@ -20,7 +40,9 @@ const init = async () => {
   await Assets.loadAssets(assetsToLoad)
 
   Render.init();
-  console.log(Assets.getText('cellFile'))
+  DefaultShaders.initShaders()
+  Mouse.init()
+
   const cell : T.Cell = NeW.default.parseCell('anotherFUNid', Assets.getText('cellFile'))
 
   for(let n in cell.npcs){
@@ -37,50 +59,33 @@ const init = async () => {
     }
   }
 
-  let cellR : T.npc = Render.createALevel('funID', cell)
+  let cellR : T.gameobject = Render.createALevel('funID', cell)
 
-  let chest : T.npc = {
-    id: "chestIMG",
-    file: '/assets/gen_specialchest.gif',
+  let renderableBatch: T.renderableBatch = {
+    r: {
+      0: {cell:cellR},
+      1: cell.npcs,
+    }
+  }
+  
+  let lyr : T.Layer = {
+    members:{npcs:renderableBatch},
     x: 0,
     y: 0,
-    angle: 0,
     scale: new Float32Array([1.,1.]),
-    texture: Render.createTexture(Assets.getImage('chest') as HTMLImageElement)
-  }
-  let bigH : T.npc = {
-    id: "bigH",
-    file: '/assets/admintable.png',
-    x: 512,
-    y: 512,
-    angle: 0,
-    scale: new Float32Array([1.,1.]),
-    texture: Render.createTexture(Assets.getImage('bigH') as HTMLImageElement)
+    angle: 0
   }
 
-  let dummy: {[layer:number]: Array<T.npc>} = {
-    0: [cellR],
-    1: cell.npcs
+  const RDRtomerge : T.renderables = {
+    all:{0:lyr}
   }
-  
-  let times: T.renderableBatch = ShaderProgramsHelper.createClassicBatch(dummy, Render.getShader('fallbackShader'))
-  
-  Render.gameRenderables = {
-    all:{0 : [times]}}
-  
+
+  Render.mergeToRenderable(RDRtomerge, T.renderableTypes.gameobject)
 
   Render.renderAll()
 
-  // Assets.save()
-
-  // Render.createShader('mainShader', Assets.getText('mainVert'), Assets.getText('mainFrag'))
-
-
-  // Render.main()
-  // Render.renderALevel(cell, 16, 64)
-
-}
-Render.init()
+} 
+// Render.init()
 
 init()
 
