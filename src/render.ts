@@ -1,6 +1,6 @@
 import * as T from './utils/cells/type'
 import Assets from "./assets"
-import DefaultShaders from "./sPrograms"
+import DefaultShaders from "./defaultShaders"
 
 import Globals from "./globals"
 
@@ -64,7 +64,6 @@ export class Render {
   }
 
   public static mergeToRenderable = (renderable:T.renderables, type:T.renderableTypes)=>{
-    console.log(renderable)
     switch(type){
       case T.renderableTypes.gameobject:{
         Render.mergeRenderables(renderable, Render.gameRenderables)
@@ -75,7 +74,6 @@ export class Render {
 
   public static mergeRenderables = (renderableInput: T.renderables, sourceRenderable: T.renderables)=>{
     for(let a in renderableInput.all){
-      // console.log(renderableInput)
       let index = 0
       while(sourceRenderable.all.hasOwnProperty(a+index)){
         index += Number.MIN_VALUE
