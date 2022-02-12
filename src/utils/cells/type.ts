@@ -5,7 +5,7 @@ export type Cell = {
   tileHeight: number,
   tiles: Array<cellTile>,
   tileset: string
-  npcs: Array<npc>
+  npcs: {[name:string]:gameobject}
 }
 
 export type cellTile = {
@@ -40,20 +40,21 @@ export type shaderProp = {
   data: Float32Array,
 }
 
-export type shaderProperties = {
+export type Shader = {
   properties: {[propName: string]: shaderProp}
   program: WebGLProgram
+  passes: {[num:number]: shaderPass},
 }
 
-// export type renderableWProps = {
-export type npc = {
-  id: string,
+export type gameobject = {
+  id?: string,
   file?: string,
   x: number,
   y: number,
   scale: Float32Array,
   angle: number,
-  texture?: Tex
+  texture?: Tex,
+  properties?: {[nm:string]:any}
 }
 
 export type Tex = {
@@ -62,23 +63,26 @@ export type Tex = {
   height: number
 }
 
-export type shaderPass = {
-  fnct : (self: renderableBatch, 
-          layer: number,
-          currentRenderable: npc,
-          targetWidth: number,
-          targetHeight: number) => void
-}
+export type shaderPass = (
+    self: renderableBatch, 
+    layer: Layer,
+    currentRenderable: gameobject,
+    targetWidth: number,
+    targetHeight: number,
+    shader: Shader
+) => void
 
 export type renderableBatch = {
-  r: {[layer:number]: Array<npc>},
-  shader: shaderProperties,
-  passes: {[num:number]: shaderPass},
-  clampToBorder: boolean
+  r: {[layer:number]: {[name:string]:gameobject}},
+  shaderID?: string,
+}
+
+export type Layer = gameobject & {
+  members : {[name:string]:renderableBatch}
 }
 
 export type renderables = {
-  all: {[layer:number]: Array<renderableBatch>}
+  all: {[layer:number]: Layer}
 }
 
 // export default cellTile
