@@ -1,4 +1,4 @@
-export type Cell = {
+export type Cell = gameobject & {
   id: string,
   tileSize: number,
   tileWidth: number,
@@ -51,8 +51,8 @@ export type gameobject = {
   file?: string,
   x: number,
   y: number,
-  scale: Float32Array,
-  angle: number,
+  scale?: Float32Array,
+  angle?: number,
   texture?: Tex,
   properties?: {[nm:string]:any}
 }
