@@ -147,8 +147,16 @@ export class Render {
   private static lastShader : string = ''
   private static shader: T.Shader 
   private static vbuffer: WebGLBuffer
+  private static isRendering: boolean = false
 
-  public static renderAll(){
+  public static startRendering(){
+    if(!Render.isRendering){
+      Render.isRendering = true
+      Render.renderAll()
+    }
+  }
+
+  private static renderAll(){
     Render.gl.clear(Render.gl.COLOR_BUFFER_BIT);
 
     const sorted = Object.keys(Render.gameRenderables.all).sort((a,b)=>Number(a)-Number(b))
@@ -156,10 +164,13 @@ export class Render {
     for(let layer in sorted){
       for(let rb in Render.gameRenderables.all[sorted[layer]].members){
         const currentShader = Render.gameRenderables.all[sorted[layer]].members[rb]
-        if(Render.lastShader===currentShader) {}
-        else Render.shader = Render.shaders[currentShader] || Render.shaders[Render.shaderForFallback] || undefined
+        if(Render.lastShader!==currentShader) {
+          Render.shader = Render.shaders[currentShader] || Render.shaders[Render.shaderForFallback] || undefined
+          if(Render.shader != undefined){
+            Render.gl.useProgram(Render.shader.program)
+          }
+        }
         if(Render.shader != undefined){
-          Render.gl.useProgram(Render.shader.program)
           Render.renderBatch(Render.gameRenderables.all[sorted[layer]].members[rb], Render.shader)
         }
         Render.lastShader = currentShader
