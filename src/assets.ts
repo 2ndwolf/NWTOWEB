@@ -3,12 +3,13 @@ import Globals from "./globals"
 export default class Assets {
   private static images: { [id: string] : HTMLImageElement} = {}
   private static texts: { [id: string] : string} = {}
+  private static defaultImage : string = 'emptyNPC'
 
   public static getImage(id:string) : HTMLImageElement {
-    return Assets.images[id]
+    return Assets.images[id] || Assets.images[Assets.defaultImage] || undefined
   }
   public static getText(id:string) : string {
-    return Assets.texts[id]
+    return Assets.texts[id] || "TEXT FILE NOT FOUND"
   }
 
   public static isTxtExt(ext:string){
@@ -66,7 +67,9 @@ export default class Assets {
 
   public static async save(){
     let data = new Blob([Assets.getText('cellFile')])
-    // TODO get the current state of the file in editor and make a nw compatible file with it
+    // get the current state of the file in editor
+    // and make a nw compatible file with it
+
     let linkD = await this.blobToBase64(data)
     let a = document.createElement("a")
 
