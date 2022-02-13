@@ -10,19 +10,23 @@ import * as T from "./type";
 import {Identification} from "../../identification";
 
 export default class NwParser {
-    public static parseCell (id : string, cellFile: string): T.Cell {
+    public static parseCell (id : string, cellFile: string, cellProperties: {[name:string]:any} = {}): T.Cell {
       const cellData = NwParser.createCellData(cellFile)
       const cellTiles = NwParser.createTiles(cellData)
       const npcs = NwParser.extractNPCS(cellFile)
       return {
         // TODO append uid
-        id: 'cell::0::levels::'+id+"::"/*+uniqueid*/,
+        id: 'cell::0::levels::0::'+id+"/"+Identification.newID(),
         tileSize: 16,
         tileWidth: 64,
         tileHeight: 64,
         tiles: cellTiles,
         tileset: 'tileset',
-        npcs: npcs
+        npcs: npcs,
+        x: cellProperties['x'] || 0,
+        y: cellProperties['y'] || 0,
+        file: cellFile,
+        properties: cellProperties
       };
     }
 
@@ -31,6 +35,14 @@ export default class NwParser {
       const cellLines : Array<string> = cellFile.split('\n')
       for(let x in cellLines){
         if(cellLines[x].startsWith("NPC ")){
+          // while cellLines[x++] ! startsWith"NPC", script.push(x+'\n')
+          let script : string = ''
+          let scriptLine : number = Number(x)+1
+          while(!cellLines[scriptLine].startsWith("NPC ") && scriptLine < cellLines.length - 1){
+            script += cellLines[scriptLine]+'\n'
+            scriptLine+=1
+          }
+          // 
           const npcProps : Array<string> = cellLines[x].split(' ')
           const newID : string = Identification.newID()
           const npc : T.gameobject = {
@@ -41,7 +53,8 @@ export default class NwParser {
             y: Number(npcProps[3])*16,
             scale: new Float32Array([1.,1.]),
             angle: 0,
-            texture : undefined
+            texture : undefined,
+            properties: {script:script}
           }
           npcs[newID] = npc
         }
