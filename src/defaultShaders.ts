@@ -97,8 +97,10 @@ export default class DefaultShaders {
           currentRenderable.texture.height,
           0, 1, 0)
           
+        const scale = currentRenderable.scale || [1.,1.]
+
         matrix = Render.Matrix.translate(matrix, currentRenderable.x/currentRenderable.texture.width, currentRenderable.y/currentRenderable.texture.height,0)
-        matrix = Render.Matrix.scale(matrix, currentRenderable.scale[0], currentRenderable.scale[1], 1)
+        matrix = Render.Matrix.scale(matrix, scale[0], scale[1], 1)
         Render.getContext().uniformMatrix4fv(matrixLocation, false, matrix);
       }
       ,
