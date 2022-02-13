@@ -8,6 +8,8 @@ export default class Globals {
   private static imgExts: Array<string> = ['png','jpg','gif']
   private static txtExts: Array<string> = ['nw','txt', 'vert', 'frag']
 
+  public static fallbackShader: string = 'fallbackShader'
+
   public static getGameWidth() : number {
     return Globals.gameWidth
   }

@@ -46,6 +46,20 @@ export type Shader = {
   passes: {[num:number]: shaderPass},
 }
 
+/**
+ * properties:
+ * 
+ * border = `int[strokeW, mode(0:off/1:inside/2:center/3:outside), gap, pathing]`
+ * (used with gridded shader rn)
+ * 
+ * selection = int[x,y,w,h]
+ * (add to a blank full game window size gameobject)
+ * 
+ * 
+ * 
+ * 
+ * unclickable = bool
+ */
 export type gameobject = {
   id?: string,
   file?: string,
@@ -58,7 +72,7 @@ export type gameobject = {
 }
 
 export type Tex = {
-  image: WebGLTexture,
+  image?: WebGLTexture,
   width: number,
   height: number
 }
@@ -75,6 +89,7 @@ export type shaderPass = (
 export type renderableBatch = {
   r: {[layer:number]: {[name:string]:gameobject}},
   shaderID?: string,
+  properties?: {[name:string]:any}
 }
 
 export type Layer = gameobject & {

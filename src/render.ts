@@ -1,6 +1,5 @@
 import * as T from './utils/cells/type'
 import Assets from "./assets"
-import DefaultShaders from "./defaultShaders"
 
 import Globals from "./globals"
 
@@ -16,7 +15,6 @@ export class Render {
   
   public static getContext: () => WebGLRenderingContext = () => {return Render.gl}
   
-  public static shaderForFallback: string = 'fallbackShader'
   public static level: WebGLTexture
   
   public static gameRenderables : T.renderables = {all:{}}
@@ -50,12 +48,6 @@ export class Render {
       return ctx
     })()
 
-    try{
-      DefaultShaders?.initShaders()
-    } catch {
-      console.log("Could not initialize all default shaders...")
-    }
-
     Render.vbuffer = Render.gl.createBuffer();
     Render.gl.bindBuffer(Render.gl.ARRAY_BUFFER, Render.vbuffer);
     Render.gl.bufferData(Render.gl.ARRAY_BUFFER, Render.positions, Render.gl.STATIC_DRAW);
@@ -86,9 +78,9 @@ export class Render {
   private static shaders: {[name:string]:T.Shader} = {}
 
   public static getShader (id: string = '') : T.Shader{
-    let shader : T.Shader = Render.shaders[id] || Render.shaders[Render.shaderForFallback] || undefined
+    let shader : T.Shader = Render.shaders[id] || Render.shaders[Globals.fallbackShader] || undefined
     if(shader===undefined){
-      console.log("Shader "+id+" doesn't exist and couldn't find fallback shader "+Render.shaderForFallback)
+      console.log("Shader "+id+" doesn't exist and couldn't find fallback shader "+Globals.fallbackShader)
     }
     return shader
   }
@@ -163,9 +155,9 @@ export class Render {
 
     for(let layer in sorted){
       for(let rb in Render.gameRenderables.all[sorted[layer]].members){
-        const currentShader = Render.gameRenderables.all[sorted[layer]].members[rb]
+        const currentShader = Render.gameRenderables.all[sorted[layer]].members[rb].shaderID
         if(Render.lastShader!==currentShader) {
-          Render.shader = Render.shaders[currentShader] || Render.shaders[Render.shaderForFallback] || undefined
+          Render.shader = Render.shaders[currentShader] || Render.shaders[Globals.fallbackShader] || undefined
           if(Render.shader != undefined){
             Render.gl.useProgram(Render.shader.program)
           }

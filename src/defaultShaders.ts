@@ -1,25 +1,29 @@
 import * as T from './utils/cells/type'
 import Render from './render'
 
+import Globals from './globals'
 
-export default class DefaultShaders {
-  private static toPush : {[name:string]:T.Shader} = {}
 
+export class DefaultShaders {
   public static initShaders() {
-    DefaultShaders.fallbackShader?.init()
-    for(const s in DefaultShaders.toPush){
-      Render.addShader(s, DefaultShaders.toPush[s])
-    }
+    new fallbackShader(Globals.fallbackShader).compile()
   }
+}
 
-  private static fallbackShader = class {
-    public static init() : void {
-      DefaultShaders.toPush['fallbackShader'] = Render.createShader(
-        DefaultShaders.fallbackShader.vertex, DefaultShaders.fallbackShader.fragment,
-        DefaultShaders.fallbackShader.properties, DefaultShaders.fallbackShader.passes)
+export class fallbackShader {
+  private id : string = ''
+
+    constructor(id:string){
+      this.id = id
+    }
+    
+    public compile() : void {
+      Render.addShader(this.id, Render.createShader(
+        this.vertex, this.fragment,
+        this.properties, this.passes))
     }
 
-    private static vertex: string = 
+    public vertex: string = 
     `
     attribute vec2 aVertexPosition;
     attribute vec2 texcoordLocation;
@@ -35,7 +39,7 @@ export default class DefaultShaders {
     }
     `
 
-    private static fragment: string =
+    public fragment: string =
     `
     precision mediump float;
         
@@ -48,7 +52,7 @@ export default class DefaultShaders {
     }
     `
 
-    private static properties = {
+    public properties = {
       aVertexPosition:{
         propType: T.shaderPropTypes.attribute,
         data: new Float32Array()
@@ -71,7 +75,7 @@ export default class DefaultShaders {
       }
     }
 
-    private static passes = {
+    public passes = {
       0:
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let aVertexPosition = Render.getContext().getAttribLocation(shader.program, "aVertexPosition");
@@ -111,15 +115,7 @@ export default class DefaultShaders {
         texMatrix = Render.Matrix.translate(texMatrix, 1, 1, 0)
         // texMatrix = Render.Matrix.scale(texMatrix, currentRenderable.scale[0], currentRenderable.scale[1], 1)
         Render.getContext().uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-      }
-      ,
-      4:
-      (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
-        // let textureLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(shader.program, "textureLocation");
-        // Render.getContext().uniform1i(textureLocation, 0);
-      }
-        
-      }
+      }      
   }
 
 }
