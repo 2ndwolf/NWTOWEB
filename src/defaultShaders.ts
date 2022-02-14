@@ -75,22 +75,19 @@ export class fallbackShader {
       }
     }
 
-    public passes = {
-      0:
+    public passes : Array<T.shaderPass> = [
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let aVertexPosition = Render.getContext().getAttribLocation(shader.program, "aVertexPosition");
         Render.getContext().enableVertexAttribArray(aVertexPosition);
         Render.getContext().vertexAttribPointer(aVertexPosition, 2, Render.getContext().FLOAT, false, 0, 0);
       }
       ,
-      1:
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let texCoordLocation = Render.getContext().getAttribLocation(shader.program, "texcoordLocation");
         Render.getContext().enableVertexAttribArray(texCoordLocation);
         Render.getContext().vertexAttribPointer(texCoordLocation, 2, Render.getContext().FLOAT, false, 0, 0);
       }
       ,
-      2:
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let matrixLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(shader.program, "matrixLocation");
         let matrix = Render.Matrix.orthographic(0, 
@@ -108,14 +105,13 @@ export class fallbackShader {
         Render.getContext().uniformMatrix4fv(matrixLocation, false, matrix);
       }
       ,
-      3:
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let textureMatrixLocation : WebGLUniformLocation = Render.getContext().getUniformLocation(shader.program, "textureMatrixLocation");
         let texMatrix = Render.Matrix.orthographic(0, 2, 2, 0, 1, 0)
         texMatrix = Render.Matrix.translate(texMatrix, 1, 1, 0)
         // texMatrix = Render.Matrix.scale(texMatrix, currentRenderable.scale[0], currentRenderable.scale[1], 1)
         Render.getContext().uniformMatrix4fv(textureMatrixLocation, false, texMatrix);
-      }      
-  }
+      }
+    ]
 
 }
