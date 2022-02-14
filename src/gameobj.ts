@@ -41,7 +41,9 @@ export default class GameObj {
       r: {
         0: {cell:cellR},
         1: cell.npcs,
-      }
+      },
+      x:0,
+      y:0
     }
     
     let lyr : T.Layer = {
