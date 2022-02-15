@@ -1,10 +1,14 @@
-import Assets from './assets'
-import Render from './render'
+import Assets from '../core/assets'
+import Render from '../core/render'
 
-import Globals from "./globals"
-import * as T from './utils/cells/type'
+import Globals from "../core/globals"
+import * as T from '../core/type'
+import * as P from '../archetypes/properties'
 
-import * as NeW from "./utils/cells/NwParser"
+import * as NeW from "./cells/NwParser"
+import Archetype from '../archetypes/rootArchetype'
+import EditorElement from '../archetypes/editorElements/editorElement'
+import NPC from '../archetypes/npcs/npc'
 
 
 export default class GameObj {
@@ -22,9 +26,9 @@ export default class GameObj {
   
     let assetPromises: Array<Promise<void>> = []
   
-    for(let n in cell.npcs){
-      cell.npcs[n].properties = {}
-      cell.npcs[n].properties['alignedToGrid'] = [16,16]
+    for(const n in cell.npcs){
+      cell.npcs[n].archetype = Archetype.mergeArchetypes([new NPC, new EditorElement])
+      cell.npcs[n].archetype.properties[P.go.alignToGrid] = [16,16]
       assetPromises.push(new Promise (async resolve=>{
         cell.npcs[n].texture = await GameObj.fileToTex(Globals.getOrigin()+"/assets/"+cell.npcs[n].file)
         resolve()

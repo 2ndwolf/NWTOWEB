@@ -1,4 +1,4 @@
-import * as T from './utils/cells/type'
+import * as T from './type'
 
 
 export class Identification {

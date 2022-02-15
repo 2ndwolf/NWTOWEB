@@ -7,7 +7,7 @@
  *  */ 
 
 import * as T from "./type";
-import {Identification} from "../../identification";
+import {Identification} from "../../core/identification";
 
 export default class NwParser {
     public static parseCell (id : string, cellFile: string, cellProperties: {[name:string]:any} = {}): T.Cell {

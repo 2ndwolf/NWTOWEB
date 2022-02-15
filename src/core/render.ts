@@ -1,6 +1,5 @@
-import * as T from './utils/cells/type'
+import * as T from './type'
 import Assets from "./assets"
-
 import Globals from "./globals"
 
 let gameWidth = () => {
@@ -185,10 +184,12 @@ export class Render {
         // TO:DO? - performance
         // link nested shader programs last
 
-        const currentShader : string = curr.shaderID || batch.shaderID || lyr.shaderID
+        const currentShader : string = curr.shaderID || batch.shaderID || lyr.shaderID || undefined
+        // console.log(currentShader)
 
         if(lastShader!==currentShader) {
           Render.shader = Render.shaders[currentShader] || Render.shaders[Globals.fallbackShader] || undefined
+          // console.log(Render.shader)
           if(Render.shader != undefined) Render.gl.useProgram(Render.shader.program)
         }
         if(Render.shader != undefined){

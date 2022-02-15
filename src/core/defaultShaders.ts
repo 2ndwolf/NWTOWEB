@@ -1,4 +1,4 @@
-import * as T from './utils/cells/type'
+import * as T from './type'
 import Render from './render'
 
 import Globals from './globals'

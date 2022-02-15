@@ -1,6 +1,6 @@
 // Importing a class in a type declaration
 // file seems weird but is a huge extension
-import Archetype from './../../archetypes/rootArchetype'
+import Archetype from '../archetypes/rootArchetype'
 
 export type Cell = gameobject & {
   id: string,
@@ -75,6 +75,8 @@ export type gameobject = {
   // file seems weird but is a huge extension
   archetype?: Archetype
   shaderID?: string,
+  unclickable?: boolean,
+  hidden?: boolean
 }
 
 export type Tex = {
