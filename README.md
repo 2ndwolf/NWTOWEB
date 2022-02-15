@@ -7,16 +7,18 @@ Pretty much a render+mouse module with an archetype extension (`class Archetype.
 # Features
 Async asset loading that awaits full download before doing anything with it (YAY!).
 
-Built-in interchangeability of shaders (OMGWTFBBQ!).
+Built-in interchangeability of shaders (OMGWTFBBQ!) that will automagically attach shader properties to shader program. (See below)
 
-Extendable through the `Archetype` + subclasses properties (`{[propFromAnEnum:P.Prop]:any}`)
+Extendable through the `Archetype` + subclasses properties (`{[propFromAnEnum:P.Prop]:any}`) — some properties are built in (``P.u.shaderProperty`` / ``P.go.gameObjectProperty``) custom properties might be added and look like `P.cgo.customGameObjectProperty` and `P.cu.customShaderProperty`.
 
-`Archetypes` go no deeper than ``rootArchetype -> subType -> subsubType`` to avoid inheritance labyrinths.
+`Archetypes` go no deeper than ``rootArchetype -> subType -> subsubType`` to avoid inheritance going wild.
+
+#### THAT'S IT!
 
 
 # HOW TO
 ## First setup the environment
-Node.js  (it's on the web, find it)
+Node.js  (it's on the web, find it!)
 
 Webpack (through node's npm)
 
