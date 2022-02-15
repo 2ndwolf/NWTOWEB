@@ -4,7 +4,7 @@ import Mouse from "./mouse/mouse"
 import MouseExt from "./mouse/mouseExt"
 import * as T from './core/type'
 import * as Shaders from './core/defaultShaders'
-import GameObj from './utils/gameobj'
+import GameObj from './gameobj/gameobj'
 
 import Selector from './archetypes/editorElements/selector'
 import Globals from "./core/globals"
