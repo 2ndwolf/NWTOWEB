@@ -6,7 +6,7 @@
  * 
  *  */ 
 
-import * as T from "./type";
+import * as T from "../../core/type";
 import {Identification} from "../../core/identification";
 
 export default class NwParser {
@@ -26,7 +26,7 @@ export default class NwParser {
         x: cellProperties['x'] || 0,
         y: cellProperties['y'] || 0,
         file: cellFile,
-        properties: cellProperties
+        // properties: cellProperties
       };
     }
 
@@ -54,7 +54,7 @@ export default class NwParser {
             scale: new Float32Array([1.,1.]),
             angle: 0,
             texture : undefined,
-            properties: {script:script}
+            // properties: {script:script}
           }
           npcs[newID] = npc
         }
