@@ -148,6 +148,8 @@ export class Render {
     }
   }
 
+  private static pastShaders : Array<T.Shader>
+  private static currentShader: T.Shader
   private static renderAll(){
     Render.gl.clear(Render.gl.COLOR_BUFFER_BIT);
 
@@ -155,20 +157,10 @@ export class Render {
 
     for(let layer in sorted){
       for(let rb in Render.gameRenderables.all[sorted[layer]].members){
-        const currentShader = Render.gameRenderables.all[sorted[layer]].members[rb].shaderID
-        if(Render.lastShader!==currentShader) {
-          Render.shader = Render.shaders[currentShader] || Render.shaders[Globals.fallbackShader] || undefined
-          if(Render.shader != undefined){
-            Render.gl.useProgram(Render.shader.program)
-          }
-        }
-        if(Render.shader != undefined){
-          Render.renderBatch(Render.gameRenderables.all[sorted[layer]].members[rb], Render.shader)
-        }
-        Render.lastShader = currentShader
+        Render.renderBatch(Render.gameRenderables.all[sorted[layer]].members[rb], Render.gameRenderables.all[sorted[layer]])
       }
     }
-    
+
     // for(let layer in Object.fromEntries(Object.entries(Render.uiRenderables.all).sort((a,b)=> Number(a)-Number(b)))){
     //   for(let rb in Render.uiRenderables.all[layer]){
     //     Render.renderBatch(Render.uiRenderables.all[layer][rb])
@@ -178,19 +170,36 @@ export class Render {
     requestAnimationFrame(Render.renderAll)
   }
   
-  private static renderBatch(batch : T.renderableBatch, shader: T.Shader){
+  private static renderBatch(batch : T.renderableBatch, lyr: T.Layer){
 
+    let lastShader : string = ''
     const sorted1 = Object.keys(batch.r).sort((a,b)=>Number(a)-Number(b))
-    for(let layer in sorted1){
-      for(let re in batch.r[sorted1[layer]]){
-        Render.gl.bindTexture(Render.gl.TEXTURE_2D, batch.r[sorted1[layer]][re].texture.image)
-        
-        const sortedPasses = Object.keys(shader.passes).sort((a,b)=>Number(a)-Number(b))
-        for(let a in sortedPasses){
-          shader.passes[sortedPasses[a]](batch,batch.r[sorted1[layer]],batch.r[sorted1[layer]][re],gameWidth(),gameHeight(),shader)          
-        }
-        Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
+    for(const layer in sorted1){
 
+      // TO:DO? - performance
+      // sort batches in layer by shader id
+
+      for(const re in batch.r[sorted1[layer]]){
+        const curr : T.gameobject = batch.r[sorted1[layer]][re]
+
+        // TO:DO? - performance
+        // link nested shader programs last
+
+        const currentShader : string = curr.shaderID || batch.shaderID || lyr.shaderID
+
+        if(lastShader!==currentShader) {
+          Render.shader = Render.shaders[currentShader] || Render.shaders[Globals.fallbackShader] || undefined
+          if(Render.shader != undefined) Render.gl.useProgram(Render.shader.program)
+        }
+        if(Render.shader != undefined){
+          Render.gl.bindTexture(Render.gl.TEXTURE_2D, curr.texture.image)
+          
+          for(const a in Render.shader.passes){
+            Render.shader.passes[a](batch,batch.r[sorted1[layer]],curr,gameWidth(),gameHeight(),Render.shader)          
+          }
+          Render.gl.drawArrays(Render.gl.TRIANGLES, 0, 6);
+        }
+        lastShader = currentShader
       }
     }
   }
@@ -212,13 +221,14 @@ export class Render {
   }
 
   public static createShader(vertexSource: string, fragmentSource: string, 
-                      properties: {[propName: string]: T.shaderProp}, passes: {[num:number]: T.shaderPass}): T.Shader{  
+                      // properties: {[propName: string]: T.shaderProp},
+                       passes: Array<T.shaderPass>): T.Shader{  
     try{
       let vertexShader = Render.GLSLinterpreter.compileShader(Render.gl.VERTEX_SHADER, vertexSource)
       let fragmentShader = Render.GLSLinterpreter.compileShader(Render.gl.FRAGMENT_SHADER, fragmentSource)
       let program = Render.GLSLinterpreter.createProgram(vertexShader, fragmentShader)
       return {
-        properties: properties,
+        // properties: properties,
         program : program,
         passes: passes
       }
