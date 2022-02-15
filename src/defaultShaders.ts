@@ -19,8 +19,7 @@ export class fallbackShader {
     
     public compile() : void {
       Render.addShader(this.id, Render.createShader(
-        this.vertex, this.fragment,
-        this.properties, this.passes))
+        this.vertex, this.fragment, this.passes))
     }
 
     public vertex: string = 
@@ -51,30 +50,7 @@ export class fallbackShader {
         gl_FragColor = texture2D(textureLocation, v_texcoord * (1.,-1.));
     }
     `
-
-    public properties = {
-      aVertexPosition:{
-        propType: T.shaderPropTypes.attribute,
-        data: new Float32Array()
-      },
-      textureLocation: {
-        propType: T.shaderPropTypes.uniform,
-        data: new Float32Array()
-      },
-      textureMatrixLocation:{
-        propType: T.shaderPropTypes.uniform,
-        data: new Float32Array()
-      },
-      matrixLocation:{
-        propType: T.shaderPropTypes.uniform,
-        data: new Float32Array()
-      },
-      texCoordLocation:{
-        propType: T.shaderPropTypes.attribute,
-        data: new Float32Array()
-      }
-    }
-
+    
     public passes : Array<T.shaderPass> = [
       (self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader) => {
         let aVertexPosition = Render.getContext().getAttribLocation(shader.program, "aVertexPosition");
