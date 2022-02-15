@@ -20,13 +20,12 @@ Extendable through the `Archetype` + subclasses properties (`{[propFromAnEnum:P.
 ## First setup the environment
 Node.js  (it's on the web, find it!)
 
-Webpack (through node's npm)
-
 Python (preferably in your path)
 
 ## Now time to have fun:
 ```
 >> cd NWTOWEB
+>> npm install
 >> startServing
 >> webpack --watch
 >> start chrome /html/z.html
