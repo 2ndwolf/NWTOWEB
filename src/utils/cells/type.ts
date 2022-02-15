@@ -1,3 +1,7 @@
+// Importing a class in a type declaration
+// file seems weird but is a huge extension
+import Archetype from './../../archetypes/rootArchetype'
+
 export type Cell = gameobject & {
   id: string,
   tileSize: number,
@@ -34,16 +38,15 @@ export enum renderingTarget {
   game, ui
 }
 
-export type shaderProp = {
-  // varName: string,
-  propType: shaderPropTypes,
-  data: Float32Array,
-}
+// export type shaderProp = {
+//   propType: shaderPropTypes,
+//   data: Float32Array,
+// }
 
 export type Shader = {
-  properties: {[propName: string]: shaderProp}
+  // properties: {[propName: string]: shaderProp}
   program: WebGLProgram
-  passes: {[num:number]: shaderPass},
+  passes: Array<shaderPass>
 }
 
 /**
@@ -68,11 +71,15 @@ export type gameobject = {
   scale?: Float32Array,
   angle?: number,
   texture?: Tex,
-  properties?: {[nm:string]:any}
+  // Importing a class in a type declaration
+  // file seems weird but is a huge extension
+  archetype?: Archetype
+  shaderID?: string,
 }
 
 export type Tex = {
   image?: WebGLTexture,
+  file?: string,
   width: number,
   height: number
 }
@@ -86,10 +93,8 @@ export type shaderPass = (
     shader: Shader
 ) => void
 
-export type renderableBatch = {
+export type renderableBatch = gameobject & {
   r: {[layer:number]: {[name:string]:gameobject}},
-  shaderID?: string,
-  properties?: {[name:string]:any}
 }
 
 export type Layer = gameobject & {
@@ -99,5 +104,3 @@ export type Layer = gameobject & {
 export type renderables = {
   all: {[layer:number]: Layer}
 }
-
-// export default cellTile
