@@ -17,11 +17,11 @@ export default class GameObj {
     let assets : {[name:string]:string} = {}
     assets[spl[spl.length-1]] = file
     await Assets.loadAssets(assets)
-    return Render.createTexture(Assets.getImage(spl[spl.length-1]))
+    return Render.createTexture(await Assets.getImage(spl[spl.length-1]))
   }
 
   public static async loadAsync():Promise<void>{
-    let cell : T.Cell = NeW.default.parseCell('anotherFUNid', Assets.getText('cellFile'))
+    let cell : T.Cell = NeW.default.parseCell('anotherFUNid', await Assets.getText('cellFile'))
     // cell = expandNPCs
   
     let assetPromises: Array<Promise<void>> = []
@@ -37,7 +37,7 @@ export default class GameObj {
   
     await Promise.all(assetPromises)
   
-    let cellR : T.gameobject = Render.createALevel('funID', cell)
+    let cellR : T.gameobject = await Render.createALevel('funID', cell)
   
     // Sort batch members by filename 
     // and ensure that batch particles that use the same texture don't bind twice

@@ -101,8 +101,8 @@ export class Render {
     }
   }
 
-  public static createALevel(id : string, cell: T.Cell) : T.gameobject{
-    let tileTex : T.Tex = Render.createTexture(Assets.getImage(cell.tileset))
+  public static async createALevel(id : string, cell: T.Cell) : Promise<T.gameobject>{
+    let tileTex : T.Tex = Render.createTexture(await Assets.getImage(cell.tileset))
 
     const framebuffer : WebGLFramebuffer = Render.gl.createFramebuffer()
     Render.gl.bindFramebuffer(Render.gl.FRAMEBUFFER, framebuffer)

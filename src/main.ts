@@ -30,29 +30,32 @@ const getByID = (id:string) : T.gameobject => {
 
 
 const init = async () => {
+
+  await Assets.loadImage(Globals.defaultImage, Globals.getOrigin()+'/assets/emptyNPC.png')
   
   let assetsToLoad: {[id:string]: string} = {};
   assetsToLoad['tileset'] = Globals.getOrigin()+'/assets/pics2.png'
   assetsToLoad['cellFile'] = Globals.getOrigin()+'/assets/nwfiles/contestfoyer.nw'
   assetsToLoad['chest'] = Globals.getOrigin()+'/assets/gen_specialchest.gif'
   assetsToLoad['bigH'] = Globals.getOrigin()+'/assets/admintable.png'
-  assetsToLoad['emptyNPC'] = Globals.getOrigin()+'/assets/emptyNPC.png'
+  // assetsToLoad['emptyNPC'] = Globals.getOrigin()+'/assets/emptyNPC.png'
   assetsToLoad['gridVert'] = Globals.getOrigin()+'/shaders/selection.vert'
   assetsToLoad['gridFrag'] = Globals.getOrigin()+'/shaders/selection.frag'
-  await Assets.loadAssets(assetsToLoad)
+  // await 
+  Assets.loadAssets(assetsToLoad)
 
   Render.init()
 
   let shd : Shaders.fallbackShader = new Shaders.fallbackShader('selector')
-  shd.vertex = Assets.getText('gridVert')
-  shd.fragment = Assets.getText('gridFrag')
+  shd.vertex = await Assets.getText('gridVert')
+  shd.fragment = await Assets.getText('gridFrag')
   shd.passes.push((self: T.renderableBatch, layer: T.Layer, currentRenderable: T.gameobject, targetWidth: number, targetHeight: number, shader: T.Shader)=>{
 
     const shaderProps : Array<string> = Object.values(P.u).toString().split(',')
     
     for(const prop in currentRenderable.archetype?.properties){
       if(shaderProps.includes(prop)){
-        console.log(prop)
+        // console.log(prop)
 
         Render.getContext().uniform4fv(Render.getContext().getUniformLocation(shader.program, prop), 
         new Float32Array(currentRenderable.archetype.properties[prop]));

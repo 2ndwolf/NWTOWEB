@@ -3,12 +3,16 @@ import Globals from "./globals"
 export default class Assets {
   private static images: { [id: string] : HTMLImageElement} = {}
   private static texts: { [id: string] : string} = {}
-  private static defaultImage : string = 'emptyNPC'
+  private static imagePromises : {[id: string]: Promise<void>} = {}
+  private static textPromises : {[id: string]: Promise<void>} = {}
 
-  public static getImage(id:string) : HTMLImageElement {
-    return Assets.images[id] || Assets.images[Assets.defaultImage] || undefined
+  public static async getImage(id:string) : Promise<HTMLImageElement> {
+    // if(Assets.imagePromises[Assets.defaultImage]) await Assets.imagePromises[Assets.defaultImage]
+    if(Assets.imagePromises[id]) await Assets.imagePromises[id]
+    return Assets.images[id] || Assets.images[Globals.defaultImage] || undefined
   }
-  public static getText(id:string) : string {
+  public static async getText(id:string) : Promise<string> {
+    await Assets.textPromises[id]
     return Assets.texts[id] || "TEXT FILE NOT FOUND"
   }
 
@@ -21,30 +25,23 @@ export default class Assets {
   }
 
 
-  public static async loadAssets(assetList: {[id: string]: string}) : Promise<void[]>{
-    let assetPromises: Array<Promise<void>> = []
-    
+  public static async loadAssets(assetList: {[id: string]: string}) : Promise<void>{
     for(let ast in assetList){
-      assetPromises.push(new Promise (resolve=>{
-        resolve(Assets.loadAsset(ast,assetList[ast]))
-      }))
+      const splt : Array<string> = assetList[ast].split('/')
+      const fileName : string = splt[splt.length-1]
+      const fileNmExt : Array<string> = fileName.split('.')
+      if(Assets.isImgExt(fileNmExt[fileNmExt.length-1]) && !Object.keys(Assets.imagePromises).includes(ast)) {
+        Assets.imagePromises[ast] = new Promise ( resolve=>{
+          resolve(Assets.loadImage(ast,assetList[ast]))
+      })} else if (Assets.isTxtExt(fileNmExt[fileNmExt.length-1]) && !Object.keys(Assets.imagePromises).includes(ast)) {
+        Assets.textPromises[ast] = new Promise ( resolve=>{
+          resolve(Assets.loadText(ast,assetList[ast]))
+      })}
     }
-    return await Promise.all(assetPromises)
-  }
-  
-  private static async loadAsset(id : string, file : string) : Promise<void> {
-    let splt : Array<string> = file.split('/')
-    let fileName : Array<string> = splt[splt.length-1].split('.')
-    
-    if(Assets.isImgExt(fileName[fileName.length-1])) {
-      await Assets.loadImage(id,file)
-    } else if (Assets.isTxtExt(fileName[fileName.length-1])) {
-      await Assets.loadText(id,file)
-    }
-
   }
 
-  private static async loadImage(id:string,file:string): Promise<void>{
+  public static async loadImage(id:string,file:string): Promise<void>{
+
     let response : Response = await fetch(file)
     let myBlob : Blob = await response.blob()
     let ab : any = await this.blobToBase64(myBlob)
@@ -59,14 +56,14 @@ export default class Assets {
     })
   }
 
-  private static async loadText(id:string,file:string): Promise<void>{
-    const response : Response = await fetch(file)
-    const data : string = await response.text();
-    Assets.texts[id] = data;
+  public static async loadText(id:string,file:string): Promise<void>{
+      const response : Response = await fetch(file)
+      const data : string = await response.text();
+      Assets.texts[id] = data;
   }
 
   public static async save(){
-    let data = new Blob([Assets.getText('cellFile')])
+    let data = new Blob([await Assets.getText('cellFile')])
     // get the current state of the file in editor
     // and make a nw compatible file with it
 

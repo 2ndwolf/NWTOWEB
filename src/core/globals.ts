@@ -9,6 +9,8 @@ export default class Globals {
   private static txtExts: Array<string> = ['nw','txt', 'vert', 'frag']
 
   public static fallbackShader: string = 'fallbackShader'
+  public static defaultImage : string = 'emptyNPC'
+
 
   public static getGameWidth() : number {
     return Globals.gameWidth
