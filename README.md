@@ -18,9 +18,9 @@ Extendable through the `Archetype` + subclasses properties (`{[propFromAnEnum:P.
 
 # HOW TO
 ## First setup the environment
-Node.js  (it's on the web, find it!)
+[Node.js](https://nodejs.org/)
 
-Python (preferably in your path)
+[Python](https://www.python.org/) (preferably in your path) 
 
 ## Now time to have fun:
 ```
